@@ -23,6 +23,7 @@ def _get_weather(url: str, params: dict, timezone: str, cache_expire_s: int) -> 
         "wind_speed_10m": hourly.Variables(1).ValuesAsNumpy(),
         "diffuse_radiation": hourly.Variables(2).ValuesAsNumpy(),
         "direct_normal_irradiance": hourly.Variables(3).ValuesAsNumpy(),
+        "cloud_cover": hourly.Variables(4).ValuesAsNumpy(),
     })
 
 
@@ -43,6 +44,7 @@ def get_weather_api_forecast(
             "wind_speed_10m",
             "diffuse_radiation",
             "direct_normal_irradiance",
+            "cloud_cover",
         ],
         "wind_speed_unit": "ms",
         "timezone": timezone,
@@ -69,6 +71,7 @@ def get_weather_api_archive(
         wind_speed_10m              [km/h] ist es laut BEschreibung !!!
         diffuse_radiation           [W/m²]
         direct_normal_irradiance    [W/m²]
+        cloud_cover                 [%]
     """
     params = {
         "latitude": latitude,
@@ -78,6 +81,7 @@ def get_weather_api_archive(
             "wind_speed_10m",
             "diffuse_radiation",
             "direct_normal_irradiance",
+            "cloud_cover",
         ],
         "wind_speed_unit": "ms",
         "timezone": timezone,

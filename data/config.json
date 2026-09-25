@@ -1,0 +1,45 @@
+{
+  "site": {
+    "latitude": 48.1,
+    "longitude": 7.67,
+    "altitude": 200,
+    "timezone": "Europe/Berlin",
+    "surface_tilt": 30
+  },
+  "systems": [
+    {
+      "name": "pv_system_1",
+      "label": "Dach Südost",
+      "active": true,
+      "kWp": 15,
+      "surface_azimuth": 135,
+      "p_inv_ac_kW": 12.5,
+      "faiman_u0": 20,
+      "faiman_u1": 5,
+      "wind_height_factor": 0.8,
+      "gamma_pdc": -0.004,
+      "dc_cable_loss": 0.04,
+      "system_loss": 0.14,
+      "eta_inv_nom": 0.96,
+      "dc_ac_ratio": 1.0,
+      "horizon_profile": null
+    },
+    {
+      "name": "pv_system_2",
+      "label": "Dach Südwest",
+      "active": true,
+      "kWp": 15,
+      "surface_azimuth": 225,
+      "p_inv_ac_kW": 12.5,
+      "faiman_u0": 20,
+      "faiman_u1": 5,
+      "wind_height_factor": 0.8,
+      "gamma_pdc": -0.004,
+      "dc_cable_loss": 0.04,
+      "system_loss": 0.14,
+      "eta_inv_nom": 0.96,
+      "dc_ac_ratio": 1.0,
+      "horizon_profile": null
+    }
+  ]
+}

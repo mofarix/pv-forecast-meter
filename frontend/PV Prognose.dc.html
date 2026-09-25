@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-550305d6-88b0-473d-a06f-caaa36af57b3/styles.css">
+<script src="_ds/industry-550305d6-88b0-473d-a06f-caaa36af57b3/_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--color-bg)}a{color:var(--color-accent)}a:hover{color:var(--color-accent-700)}</style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+
+<header style="border-bottom:1px solid var(--color-divider)">
+  <div style="max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:32px;padding:14px 28px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="blueprint" style="width:30px;height:30px;display:grid;place-items:center;color:var(--color-accent)">
+        <dc-import name="WxIcon" type="sun" size="18" hint-size="18px,18px"></dc-import>
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:21px;letter-spacing:.04em;text-transform:uppercase">PV-Prognose</span>
+    </div>
+    <nav class="nav" style="padding:0;gap:26px">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+        <a href="#" aria-current="{{ t.current }}" onClick="{{ t.go }}" style="font-family:var(--font-heading);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;padding:6px 0 4px;border-bottom:2px solid {{ t.line }}">{{ t.label }}</a>
+      </sc-for>
+    </nav>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+      <span style="font-size:12px;color:var(--color-neutral-700)">{{ runStamp }}</span>
+      <button class="btn btn-secondary" onClick="{{ openIo }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="m21 16-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16"></path></svg>
+        Import / Export
+      </button>
+      <input type="file" accept=".csv,text/csv" ref="{{ csvRef }}" onChange="{{ onCsvFile }}" style="display:none">
+      <input type="file" accept=".json,application/json" ref="{{ jsonRef }}" onChange="{{ onJsonFile }}" style="display:none">
+      <select class="input" value="{{ sel }}" onChange="{{ onSel }}" style="width:auto;min-width:200px">
+        <sc-for list="{{ sysOptions }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main style="max-width:1440px;margin:0 auto;padding:28px 28px 60px;display:flex;flex-direction:column;gap:24px">
+
+<sc-if value="{{ msg }}" hint-placeholder-val="{{ false }}">
+  <div class="blueprint" style="padding:40px;text-align:center;color:var(--color-neutral-700)">{{ msg }}<i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i></div>
+</sc-if>
+
+<sc-if value="{{ isHeute }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="card-kicker">{{ sysLabel }}</span>
+      <h1 style="margin:0;font-size:42px">Heute, {{ T.dateLong }}</h1>
+    </div>
+    <span style="margin-left:auto;font-size:13px;color:var(--color-neutral-700)">{{ nowNote }}</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+    <div class="blueprint" style="grid-column:span 2;padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <span class="card-kicker">Bereits erzeugt · berechnet bis {{ nowLabel }}</span>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:64px;line-height:1">{{ T.harv }}</span>
+        <span style="font-family:var(--font-heading);font-size:24px;color:var(--color-neutral-700)">von {{ T.dayF }} kWh Tagesprognose</span>
+        <span style="margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:40px;color:var(--color-accent-700)">{{ T.pct }}</span>
+      </div>
+      <svg viewBox="0 0 1000 22" preserveAspectRatio="none" style="display:block;width:100%;height:22px">
+        <defs><pattern id="hatchP" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--color-accent);stroke-width:1.5"></line></pattern></defs>
+        <rect x="0" y="0" width="1000" height="22" style="fill:url(#hatchP);opacity:.45"></rect>
+        <rect x="0" y="0" width="{{ T.harvW }}" height="22" style="fill:var(--color-accent)"></rect>
+        <rect x="0.5" y="0.5" width="999" height="21" style="fill:none;stroke:var(--color-accent);stroke-width:1"></rect>
+      </svg>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:4px">
+        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:var(--color-neutral-700)">Noch erwartet</span><span style="font-family:var(--font-heading);font-weight:600;font-size:24px">{{ T.remain }} kWh</span></div>
+        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:var(--color-neutral-700)">Aktuelle Leistung</span><span style="font-family:var(--font-heading);font-weight:600;font-size:24px">{{ T.nowKw }} kW</span></div>
+        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:var(--color-neutral-700)">Produktive Stunden übrig</span><span style="font-family:var(--font-heading);font-weight:600;font-size:24px">{{ T.hoursLeft }}</span></div>
+      </div>
+    </div>
+
+    <div class="blueprint" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <span class="card-kicker">Spitzenleistung</span>
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:48px;line-height:1">{{ T.peakKw }} <span style="font-size:22px;color:var(--color-neutral-700)">kW</span></span>
+      <span style="font-size:13px;color:var(--color-neutral-700)">erwartet {{ T.peakTime }}</span>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--color-divider)">
+        <sc-for list="{{ T.perSys }}" as="p">
+          <div style="display:flex;justify-content:space-between;font-size:13px;gap:8px"><span>{{ p.name }}</span><span style="font-weight:500">{{ p.kwh }} kWh</span></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div class="blueprint" style="padding:22px 24px;display:flex;flex-direction:column;gap:12px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;align-items:center;gap:8px"><span class="card-kicker">Wetter jetzt</span><sc-if value="{{ wxDerived }}"><span class="tag tag-neutral" style="margin-left:auto">abgeleitet</span></sc-if></div>
+      <div style="display:flex;align-items:center;gap:14px;color:var(--color-accent)">
+        <dc-import name="WxIcon" type="{{ T.nowWx.icon }}" size="44" hint-size="44px,44px"></dc-import>
+        <div style="display:flex;flex-direction:column;color:var(--color-text)">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ T.nowWx.temp }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-700)">{{ T.nowWx.cloud }} Bewölkung</span>
+        </div>
+      </div>
+      <div style="margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent)"><dc-import name="WxIcon" type="sunrise" size="20" hint-size="20px,20px"></dc-import><span style="color:var(--color-text);font-size:14px;font-weight:500">{{ T.sr }}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent)"><dc-import name="WxIcon" type="sunset" size="20" hint-size="20px,20px"></dc-import><span style="color:var(--color-text);font-size:14px;font-weight:500">{{ T.ss }}</span></div>
+      </div>
+      <span style="font-size:12px;color:var(--color-neutral-700)">Tageslänge {{ T.dayLen }}</span>
+    </div>
+  </div>
+
+  <div class="blueprint" style="padding:22px 24px 18px;display:flex;flex-direction:column;gap:14px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap">
+      <h3 style="margin:0">Stündliche Leistung</h3>
+      <div style="display:flex;gap:18px;font-size:12px;color:var(--color-neutral-700)">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:var(--color-accent);display:block"></span>Bereits erzeugt</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border:1px solid var(--color-accent);background:repeating-linear-gradient(45deg,var(--color-accent) 0 1.5px,transparent 1.5px 5px);display:block"></span>Prognose</span>
+      </div>
+      <span style="margin-left:auto;font-size:14px"><b style="font-weight:500">{{ T.ro.time }}</b> · {{ T.ro.kw }} kW Ø · {{ T.ro.kwh }} kWh · {{ T.ro.cloud }} · {{ T.ro.temp }}</span>
+    </div>
+    <div style="position:relative">
+    <svg viewBox="0 0 1320 256" style="display:block;width:100%;height:auto" onMouseLeave="{{ clearHover }}">
+      <defs><pattern id="hatchA" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--color-accent);stroke-width:1.5"></line></pattern></defs>
+      <sc-for list="{{ T.yTicks }}" as="t">
+        <line x1="48" x2="1308" y1="{{ t.y }}" y2="{{ t.y }}" style="stroke:var(--color-divider);stroke-width:1"></line>
+        </sc-for>
+      <sc-for list="{{ T.bars }}" as="b">
+        <sc-if value="{{ b.hl }}"><rect x="{{ b.sx }}" y="16" width="{{ b.sw }}" height="214" style="fill:var(--color-accent-100)"></rect></sc-if>
+        <sc-if value="{{ b.past }}"><rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="fill:var(--color-accent)"></rect></sc-if>
+        <sc-if value="{{ b.future }}"><rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="fill:url(#hatchA);stroke:var(--color-accent);stroke-width:1"></rect></sc-if>
+        <sc-if value="{{ b.cur }}"><rect x="{{ b.x }}" y="{{ b.cy }}" width="{{ b.w }}" height="{{ b.ch }}" style="fill:var(--color-accent)"></rect></sc-if>
+                <rect x="{{ b.sx }}" y="16" width="{{ b.sw }}" height="240" style="fill:transparent;cursor:crosshair" onMouseEnter="{{ b.onHover }}"></rect>
+      </sc-for>
+      <line x1="48" x2="1308" y1="230" y2="230" style="stroke:var(--color-text);stroke-width:1"></line>
+      <sc-if value="{{ T.showNow }}">
+        <line x1="{{ T.nowX }}" x2="{{ T.nowX }}" y1="10" y2="230" style="stroke:var(--color-accent-900);stroke-width:1.5;stroke-dasharray:4 3;pointer-events:none"></line>
+              </sc-if>
+      <text x="40" y="10" style="font-size:11px;fill:var(--color-neutral-700);text-anchor:end;font-family:var(--font-body)">kW</text>
+    </svg>
+      <div style="position:absolute;inset:0;pointer-events:none">
+        <sc-for list="{{ T.yTicks }}" as="t"><span style="position:absolute;right:96.97%;top:{{ t.tp }};transform:translateY(-50%);font-size:11px;color:var(--color-neutral-700);font-family:var(--font-body);white-space:nowrap">{{ t.label }}</span></sc-for>
+        <sc-for list="{{ T.bars }}" as="b"><span style="position:absolute;left:{{ b.lp }};top:97.66%;transform:translate(-50%,-50%);font-size:11px;color:var(--color-neutral-700);font-family:var(--font-body);white-space:nowrap">{{ b.label }}</span></sc-for>
+        <sc-if value="{{ T.showNow }}"><span style="position:absolute;left:{{ T.nowLp }};top:1%;font-size:11px;font-weight:500;color:var(--color-accent-900);white-space:nowrap">Jetzt {{ nowLabel }}</span></sc-if>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(15,minmax(0,1fr));margin:0 0.91% 0 3.64%;border-top:1px solid var(--color-divider);padding-top:10px">
+      <sc-for list="{{ T.strip }}" as="s" hint-placeholder-count="15">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-accent)">
+          <dc-import name="WxIcon" type="{{ s.icon }}" size="20" hint-size="20px,20px"></dc-import>
+          <span style="font-size:13px;font-weight:500;color:var(--color-text)">{{ s.temp }}</span>
+          <span style="font-size:11px;color:var(--color-neutral-700)">{{ s.cloud }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isWoche }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="card-kicker">{{ sysLabel }}</span>
+      <h1 style="margin:0;font-size:42px">{{ weekTitle }}</h1>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:13px;color:var(--color-neutral-700)">Summe Prognosezeitraum</span>
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:32px">{{ weekSum }} kWh</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:16px">
+    <sc-for list="{{ weekCards }}" as="d" hint-placeholder-count="7">
+      <div class="blueprint" onClick="{{ d.onClick }}" style="padding:16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;outline:{{ d.ring }};outline-offset:-1px" style-hover="background:color-mix(in srgb, var(--color-text) 4%, transparent)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:24px">{{ d.wd }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-700)">{{ d.date }}</span>
+          <sc-if value="{{ d.isToday }}"><span class="tag tag-accent" style="margin-left:auto">Heute</span></sc-if>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;color:var(--color-accent)">
+          <dc-import name="WxIcon" type="{{ d.icon }}" size="36" hint-size="36px,36px"></dc-import>
+          <div style="display:flex;flex-direction:column;color:var(--color-text)">
+            <span style="font-size:15px;font-weight:500">{{ d.temps }}</span>
+            <span style="font-size:12px;color:var(--color-neutral-700)">{{ d.cloud }} Bewölkung</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 140 40" preserveAspectRatio="none" style="display:block;width:100%;height:44px;border-bottom:1px solid var(--color-divider)">
+          <path d="{{ d.area }}" style="fill:var(--color-accent-200)"></path>
+          <path d="{{ d.line }}" style="fill:none;stroke:var(--color-accent);stroke-width:1.5;vector-effect:non-scaling-stroke"></path>
+        </svg>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1">{{ d.kwh }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-700)">kWh</span>
+        </div>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Spitze {{ d.peak }} kW · {{ d.srss }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div class="blueprint" style="padding:22px 24px 18px;display:flex;flex-direction:column;gap:14px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap">
+      <h3 style="margin:0">Stündliche Prognose · {{ D.dateLong }}</h3>
+      <span style="font-size:13px;color:var(--color-neutral-700)">{{ D.dayF }} kWh · Spitze {{ D.peakKw }} kW {{ D.peakTime }}</span>
+      <span style="margin-left:auto;font-size:14px"><b style="font-weight:500">{{ D.ro.time }}</b> · {{ D.ro.kw }} kW Ø · {{ D.ro.kwh }} kWh · {{ D.ro.cloud }} · {{ D.ro.temp }}</span>
+    </div>
+    <div style="position:relative">
+    <svg viewBox="0 0 1320 256" style="display:block;width:100%;height:auto" onMouseLeave="{{ clearHover }}">
+      <defs><pattern id="hatchB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--color-accent);stroke-width:1.5"></line></pattern></defs>
+      <sc-for list="{{ D.yTicks }}" as="t">
+        <line x1="48" x2="1308" y1="{{ t.y }}" y2="{{ t.y }}" style="stroke:var(--color-divider);stroke-width:1"></line>
+        </sc-for>
+      <sc-for list="{{ D.bars }}" as="b">
+        <sc-if value="{{ b.hl }}"><rect x="{{ b.sx }}" y="16" width="{{ b.sw }}" height="214" style="fill:var(--color-accent-100)"></rect></sc-if>
+        <sc-if value="{{ b.past }}"><rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="fill:var(--color-accent)"></rect></sc-if>
+        <sc-if value="{{ b.future }}"><rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="fill:url(#hatchB);stroke:var(--color-accent);stroke-width:1"></rect></sc-if>
+        <sc-if value="{{ b.cur }}"><rect x="{{ b.x }}" y="{{ b.cy }}" width="{{ b.w }}" height="{{ b.ch }}" style="fill:var(--color-accent)"></rect></sc-if>
+                <rect x="{{ b.sx }}" y="16" width="{{ b.sw }}" height="240" style="fill:transparent;cursor:crosshair" onMouseEnter="{{ b.onHover }}"></rect>
+      </sc-for>
+      <line x1="48" x2="1308" y1="230" y2="230" style="stroke:var(--color-text);stroke-width:1"></line>
+      <text x="40" y="10" style="font-size:11px;fill:var(--color-neutral-700);text-anchor:end;font-family:var(--font-body)">kW</text>
+    </svg>
+      <div style="position:absolute;inset:0;pointer-events:none">
+        <sc-for list="{{ D.yTicks }}" as="t"><span style="position:absolute;right:96.97%;top:{{ t.tp }};transform:translateY(-50%);font-size:11px;color:var(--color-neutral-700);font-family:var(--font-body);white-space:nowrap">{{ t.label }}</span></sc-for>
+        <sc-for list="{{ D.bars }}" as="b"><span style="position:absolute;left:{{ b.lp }};top:97.66%;transform:translate(-50%,-50%);font-size:11px;color:var(--color-neutral-700);font-family:var(--font-body);white-space:nowrap">{{ b.label }}</span></sc-for>
+        
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(15,minmax(0,1fr));margin:0 0.91% 0 3.64%;border-top:1px solid var(--color-divider);padding-top:10px">
+      <sc-for list="{{ D.strip }}" as="s" hint-placeholder-count="15">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--color-accent)">
+          <dc-import name="WxIcon" type="{{ s.icon }}" size="20" hint-size="20px,20px"></dc-import>
+          <span style="font-size:13px;font-weight:500;color:var(--color-text)">{{ s.temp }}</span>
+          <span style="font-size:11px;color:var(--color-neutral-700)">{{ s.cloud }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isJahr }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="card-kicker">{{ sysLabel }}</span>
+      <h1 style="margin:0;font-size:42px">Jahresübersicht {{ year }}</h1>
+    </div>
+    <div class="seg" style="margin-left:auto">
+      <sc-for list="{{ yearOpts }}" as="o">
+        <label class="seg-opt"><input type="radio" name="year" checked="{{ o.checked }}" onChange="{{ o.on }}">{{ o.l }}</label>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+    <sc-for list="{{ Y.kpis }}" as="k" hint-placeholder-count="4">
+      <div class="blueprint" style="padding:20px 22px;display:flex;flex-direction:column;gap:6px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <span class="card-kicker">{{ k.k }}</span>
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:40px;line-height:1">{{ k.v }} <span style="font-size:18px;color:var(--color-neutral-700)">{{ k.u }}</span></span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">{{ k.sub }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div class="blueprint" style="padding:22px 24px 18px;display:flex;flex-direction:column;gap:14px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap">
+      <h3 style="margin:0">Monatliche Energie</h3>
+      <div style="display:flex;gap:18px;font-size:12px;color:var(--color-neutral-700)">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:var(--color-accent);display:block"></span>Archiv-Berechnung</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border:1px solid var(--color-accent);background:repeating-linear-gradient(45deg,var(--color-accent) 0 1.5px,transparent 1.5px 5px);display:block"></span>Prognose (forecast.csv)</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border:1px dashed var(--color-neutral-600);display:block"></span>Erwartung</span>
+      </div>
+      <span style="margin-left:auto;font-size:13px;color:var(--color-neutral-700)">kWh je Monat</span>
+    </div>
+    <div style="position:relative">
+    <svg viewBox="0 0 1320 250" style="display:block;width:100%;height:auto">
+      <defs><pattern id="hatchY" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--color-accent);stroke-width:1.5"></line></pattern></defs>
+      <sc-for list="{{ Y.yTicks }}" as="t">
+        <line x1="64" x2="1308" y1="{{ t.y }}" y2="{{ t.y }}" style="stroke:var(--color-divider);stroke-width:1"></line>
+              </sc-for>
+      <sc-for list="{{ Y.bars }}" as="b">
+        <sc-if value="{{ b.hasE }}"><rect x="{{ b.x }}" y="{{ b.ey }}" width="{{ b.w }}" height="{{ b.eh }}" style="fill:none;stroke:var(--color-neutral-600);stroke-width:1;stroke-dasharray:4 3"></rect></sc-if>
+        <sc-if value="{{ b.hasA }}"><rect x="{{ b.x }}" y="{{ b.ay }}" width="{{ b.w }}" height="{{ b.ah }}" style="fill:var(--color-accent)"></rect></sc-if>
+        <sc-if value="{{ b.hasF }}"><rect x="{{ b.x }}" y="{{ b.fy }}" width="{{ b.w }}" height="{{ b.fh }}" style="fill:url(#hatchY);stroke:var(--color-accent);stroke-width:1"></rect></sc-if>
+              </sc-for>
+      <line x1="64" x2="1308" y1="240" y2="240" style="stroke:var(--color-text);stroke-width:1"></line>
+    </svg>
+      <div style="position:absolute;inset:0;pointer-events:none">
+        <sc-for list="{{ Y.yTicks }}" as="t"><span style="position:absolute;right:95.76%;top:{{ t.tp }};transform:translateY(-50%);font-size:11px;color:var(--color-neutral-700);font-family:var(--font-body);white-space:nowrap">{{ t.label }}</span></sc-for>
+        <sc-for list="{{ Y.bars }}" as="b"><span style="position:absolute;left:{{ b.lp }};top:{{ b.vp }};transform:translate(-50%,-100%);font-size:12px;font-weight:500;white-space:nowrap">{{ b.val }}</span></sc-for>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));margin:-8px 0.91% 0 4.85%">
+      <sc-for list="{{ Y.bars }}" as="b" hint-placeholder-count="12">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:16px">{{ b.m }}</span>
+          <sc-if value="{{ b.running }}"><span class="tag tag-outline">laufend</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <span style="font-size:12px;color:var(--color-neutral-700)">{{ Y.note }}</span>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isParam }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="card-kicker">mofarix/pv-forecast-meter · pv_forecast.py</span>
+      <h1 style="margin:0;font-size:42px">Anlagen &amp; Parameter</h1>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span class="card-kicker">Anlagen ({{ sysCount }})</span>
+      <sc-for list="{{ editList }}" as="s" hint-placeholder-count="2">
+        <div class="blueprint" onClick="{{ s.onClick }}" style="padding:14px 16px;display:flex;flex-direction:column;gap:4px;cursor:pointer;outline:{{ s.ring }};outline-offset:-1px" style-hover="background:color-mix(in srgb, var(--color-text) 4%, transparent)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:18px">{{ s.name }}</span>
+          <span style="font-size:12px;color:var(--color-neutral-700)">{{ s.meta }}</span>
+          <span style="font-size:11px;color:var(--color-neutral-600);font-family:ui-monospace,Menlo,monospace">{{ s.id }}</span>
+        </div>
+      </sc-for>
+      <button class="btn btn-secondary" disabled="{{ true }}">+ Anlage hinzufügen</button>
+    </div>
+
+    <div class="blueprint" style="padding:24px 28px;display:flex;flex-direction:column;gap:26px">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <h2 style="margin:0">{{ draftName }}</h2>
+        <span style="font-size:12px;color:var(--color-neutral-600);font-family:ui-monospace,Menlo,monospace">{{ editId }}</span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" checked="{{ draftActive }}" onChange="{{ onActive }}">Aktiv (in Prognose berechnen)</label>
+        <sc-if value="{{ dirty }}"><span class="tag tag-accent" style="margin-left:auto">Ungespeicherte Änderungen</span></sc-if>
+      </div>
+
+      <sc-for list="{{ mainGroups }}" as="g" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <h6 style="margin:0;color:var(--color-neutral-700)">{{ g.title }}</h6>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+            <sc-for list="{{ g.fields }}" as="f">
+              <div class="field" style="grid-column:span {{ f.span }}">
+                <label>{{ f.label }}</label>
+                <input class="input" name="{{ f.k }}" value="{{ f.v }}" onChange="{{ onField }}">
+                <span style="display:block;font-size:11px;color:var(--color-neutral-600);font-family:ui-monospace,Menlo,monospace;margin-top:4px">{{ f.py }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid var(--color-divider)">
+        <button class="btn btn-ghost" onClick="{{ toggleAdv }}" style="justify-content:flex-start;gap:10px;padding:14px 0;font-size:16px;color:var(--color-text);border:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transform:rotate({{ advRot }}deg);transition:transform .15s"><path d="m9 18 6-6-6-6"></path></svg>
+          Erweiterte Modellparameter
+          <span style="font-family:var(--font-body);font-weight:400;font-size:13px;color:var(--color-neutral-700)">Faiman · Verluste · Wirkungsgrad · Horizont</span>
+          <span style="margin-left:auto;font-family:var(--font-body);font-weight:500;font-size:13px">Verluste gesamt inkl. WR {{ totalLoss }} %</span>
+        </button>
+        <sc-if value="{{ adv }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:22px;padding:6px 0 4px">
+            <sc-for list="{{ advGroups }}" as="g">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:baseline;gap:12px"><h6 style="margin:0;color:var(--color-neutral-700)">{{ g.title }}</h6><span style="font-size:12px;color:var(--color-neutral-600)">{{ g.note }}</span></div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+                  <sc-for list="{{ g.fields }}" as="f">
+                    <div class="field" style="grid-column:span {{ f.span }}">
+                      <label>{{ f.label }}</label>
+                      <input class="input" name="{{ f.k }}" value="{{ f.v }}" onChange="{{ onField }}">
+                      <span style="display:block;font-size:11px;color:var(--color-neutral-600);font-family:ui-monospace,Menlo,monospace;margin-top:4px">{{ f.py }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--color-divider)">
+        <span style="font-size:12px;color:var(--color-neutral-700)">Letzter Lauf {{ runStamp }}</span>
+        <sc-if value="{{ saved }}"><span class="tag tag-accent">{{ saved }}</span></sc-if>
+        <button class="btn btn-ghost" style="margin-left:auto" onClick="{{ openJson }}">Als JSON anzeigen</button>
+        <button class="btn btn-secondary" onClick="{{ discard }}">Verwerfen</button>
+        <button class="btn btn-primary blueprint" onClick="{{ save }}">Speichern &amp; neu berechnen<i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i></button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</main>
+
+<sc-if value="{{ showJson }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" onClick="{{ closeJson }}">
+    <div class="dialog blueprint" style="width:min(640px,100%);background:var(--color-bg)" onClick="{{ stop }}">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <span class="dialog-title">Parameter für pv_forecast.py</span>
+      <pre style="margin:0;max-height:420px;overflow:auto;font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--color-neutral-100);border:1px solid var(--color-divider);padding:14px">{{ jsonText }}</pre>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ copyJson }}">{{ copyLabel }}</button>
+        <button class="btn btn-primary" onClick="{{ closeJson }}">Schließen</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showIo }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" onClick="{{ closeIo }}">
+    <div class="dialog blueprint" style="width:min(760px,100%);gap:20px;background:var(--color-bg)" onClick="{{ stop }}">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="dialog-title">Import / Export</span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Aktive Auswahl: {{ sysLabel }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <h6 style="margin:0;color:var(--color-neutral-700)">Importieren</h6>
+          <sc-for list="{{ importOpts }}" as="o">
+            <button class="btn btn-secondary" onClick="{{ o.on }}" style="justify-content:flex-start;text-align:left;padding:12px 14px;gap:12px;font-family:var(--font-body);font-weight:400">
+              <svg width="18" height="18" viewBox="0 0 24 24" style="fill:none;stroke:var(--color-accent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>
+              <span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ o.l }}</span><span style="font-size:12px;color:var(--color-neutral-700)">{{ o.d }}</span></span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <h6 style="margin:0;color:var(--color-neutral-700)">Exportieren</h6>
+          <sc-for list="{{ exportOpts }}" as="o">
+            <button class="btn btn-secondary" onClick="{{ o.on }}" style="justify-content:flex-start;text-align:left;padding:12px 14px;gap:12px;font-family:var(--font-body);font-weight:400">
+              <svg width="18" height="18" viewBox="0 0 24 24" style="fill:none;stroke:var(--color-accent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>
+              <span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ o.l }}</span><span style="font-size:12px;color:var(--color-neutral-700)">{{ o.d }}</span></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <sc-if value="{{ ioMsg }}"><span class="tag tag-accent" style="align-self:flex-start">{{ ioMsg }}</span></sc-if>
+      <div class="dialog-actions" style="margin-top:0">
+        <button class="btn btn-primary" onClick="{{ closeIo }}">Schließen</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;zeit&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Simuliert&quot;,&quot;Echtzeit&quot;],&quot;default&quot;:&quot;Echtzeit&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Uhrzeit&quot;},&quot;simHour&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:5,&quot;max&quot;:21,&quot;step&quot;:0.25,&quot;default&quot;:13.5,&quot;unit&quot;:&quot;h&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Uhrzeit&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Heute&quot;,&quot;7 Tage&quot;,&quot;Jahr&quot;,&quot;Parameter&quot;],&quot;default&quot;:&quot;Heute&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const HRS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+const WDL = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MONL = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MON = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const SY = [22,38,72,105,125,132,130,115,85,55,25,17];
+const FAC = { 2025: [1.05,.9,1.12,.96,1.1,1.04,.93,1.08,.97,1.02,.88,1.1], 2026: [.92,1.1,.95,1.08,1.02,.97,1.05,.99,.97] };
+const TEMPS = [[9,19],[10,21],[11,16],[10,14],[8,17],[9,20],[10,18],[9,17]];
+const SITE_KEYS = ['lat','lon','alt','tz','tilt'];
+const DEF = { active: true, lat: '48.100', lon: '7.670', alt: '35', tz: 'Europe/Berlin', tilt: '30', az: '180', kWp: '15', p_inv_ac_kW: '12.5',
+  faiman_u0: '20', faiman_u1: '5', wind_height_factor: '0.8', gamma_pdc: '-0.004', eta_inv_nom: '96', dc_ac_ratio: '1.0', dc_cable_loss: '4', system_loss: '14', horizon: '' };
+const SEED = { pv_system_1: { name: 'Dach Südost', az: '135' }, pv_system_2: { name: 'Dach Südwest', az: '225' } };
+const MAIN = [
+  { title: 'Standort · gilt für alle Anlagen', fields: [['lat','Breitengrad (°)','LATITUDE'],['lon','Längengrad (°)','LONGITUDE'],['alt','Höhe (m ü. NN)','altitude'],['tz','Zeitzone','TIMEZONE']] },
+  { title: 'PV-Generator', fields: [['kWp','Nennleistung (kWp)','kWp'],['az','Azimut (° · 180 = Süd)','surface_azimuth'],['p_inv_ac_kW','Wechselrichter AC (kW)','p_inv_ac_kW'],['tilt','Neigung (°) · global','SURFACE_TILT']] }
+];
+const ADV = [
+  { title: 'Temperaturmodell · Faiman', note: 'T_Zelle = T_Luft + E_POA / (u0 + u1 · v_Wind · Faktor)', fields: [['faiman_u0','U0 (W/m²K)','FAIMAN_U0'],['faiman_u1','U1 (W·s/m³K)','FAIMAN_U1'],['wind_height_factor','Windhöhen-Faktor','WIND_HEIGHT_FACTOR'],['gamma_pdc','Temperaturkoeff. (1/K)','gamma_pdc']] },
+  { title: 'Verluste & Wirkungsgrad', note: 'PVWatts DC → Wechselrichter → Systemverlust', fields: [['dc_cable_loss','DC-Kabelverlust (%)','DC_CABLE_LOSS'],['system_loss','Systemverlust (%)','SYSTEM_LOSS'],['eta_inv_nom','η Wechselrichter (%)','ETA_INVERTER'],['dc_ac_ratio','DC/AC-Verhältnis','dc_ac_ratio']] },
+  { title: 'Horizontverschattung', note: 'Azimut:Winkel-Stützpunkte, z. B. 0:0, 200:0, 220:10, 270:15, 300:8, 360:0 — leer = keine', fields: [['horizon','Horizontprofil','horizon_profile']] }
+];
+const nf = (n, d = 1) => (n || 0).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const kwhF = n => n >= 100 ? nf(n, 0) : nf(n, 1);
+const hm = t => { let h = Math.floor(t), m = Math.round((t - h) * 60); if (m === 60) { h++; m = 0; } return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); };
+const nice = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1,1.2,1.5,2,2.5,3,4,5,6,8,10]) if (m * p >= v) return m * p; return 10 * p; };
+const icon = (cloud, day) => !day ? 'moon' : cloud > 85 ? 'rain' : cloud < 25 ? 'sun' : cloud < 60 ? 'partly' : 'cloud';
+const pnum = v => parseFloat(String(v).replace(',', '.')) || 0;
+// Date (YYYY-MM-DD) and decimal hour in the site's timezone, independent of the browser's
+const siteNow = tz => {
+  let p; try { p = new Intl.DateTimeFormat('sv-SE', { timeZone: tz || 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()); }
+  catch (e) { p = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()); }
+  const g = t => p.find(x => x.type === t).value;
+  return { date: g('year') + '-' + g('month') + '-' + g('day'), h: +g('hour') + +g('minute') / 60 };
+};
+const totalLoss = m => 100 * (1 - (1 - pnum(m.dc_cable_loss) / 100) * (1 - pnum(m.system_loss) / 100) * (pnum(m.eta_inv_nom) / 100 || 1));
+
+function parseCsv(txt) {
+  const lines = txt.trim().split(/\r?\n/), head = lines[0].split(',');
+  const ids = head.filter(h => /_P_ac_W$/.test(h) && !/^P_total/.test(h)).map(h => h.replace(/_P_ac_W$/, ''));
+  const col = n => head.indexOf(n), byDate = {}, dates = [];
+  const tc = col('temp_air_C'), cc = col('cloud_cover_pct'), num = v => v === undefined || v === '' ? null : +v;
+  for (let i = 1; i < lines.length; i++) {
+    const c = lines[i].split(','); if (c.length < 2) continue;
+    const date = c[0].slice(0, 10), h = +c[0].slice(11, 13);
+    if (!byDate[date]) { byDate[date] = {}; dates.push(date); }
+    const E = {}, P = {};
+    ids.forEach(id => { E[id] = +c[col(id + '_E_kWh')] || 0; P[id] = +c[col(id + '_P_ac_W')] || 0; });
+    const prev = byDate[date][h];  // DST fall-back: the same local hour twice -> sum energy, keep peak power
+    if (prev) ids.forEach(id => { E[id] += prev.E[id]; P[id] = Math.max(P[id], prev.P[id]); });
+    byDate[date][h] = { ts: prev ? prev.ts : c[0], E, P, T: tc >= 0 ? num(c[tc]) : null, C: cc >= 0 ? num(c[cc]) : null };
+  }
+  const maxE = {};
+  dates.forEach(d => HRS.forEach(h => { const r = byDate[d][h]; const t = r ? ids.reduce((a, id) => a + r.E[id], 0) : 0; maxE[h] = Math.max(maxE[h] || 0, t); }));
+  return { ids, byDate, dates, maxE, rows: lines.length - 1, hasWx: tc >= 0 };
+}
+
+class Component extends DCLogic {
+  state = { screen: null, sel: 'all', hover: null, selDay: 1, year: new Date().getFullYear(), data: null, err: null, meta: null, editId: null, draft: null, saved: false, adv: false, showJson: false, copied: false,
+    api: false, run: null, sun: {}, archive: {} };
+
+  csvRef = React.createRef();
+  jsonRef = React.createRef();
+
+  componentDidMount() {
+    const cfg = this.api('/api/systems').then(r => r.json()).catch(() => null);
+    this.api('/api/forecast').then(r => r.text()).then(t => ({ t, api: true }))
+      .catch(() => fetch('uploads/forecast.csv').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(t => ({ t, api: false })))
+      .then(({ t, api }) => cfg.then(c => {
+        const d = this.loadCsv(t, 'forecast.csv');
+        this.setState({ api });
+        if (c) this.fromJson(JSON.stringify(c));
+        if (api) { this.loadSun(d.dates); this.loadRun(); if ((this.props.startScreen || 'Heute') === 'Jahr') this.loadArchive(this.state.year); }
+      }))
+      .catch(e => this.setState({ err: 'forecast.csv konnte nicht geladen werden (' + e.message + ')' }));
+  }
+
+  // fetch that rejects on HTTP errors; FastAPI 422 details become "field: message"
+  api(path, opts) {
+    return fetch(path, opts).then(r => r.ok ? r : r.text().then(t => {
+      let msg = t;
+      try { const d = JSON.parse(t).detail; msg = Array.isArray(d) ? d.map(x => (x.loc || []).filter(l => l !== 'body').join('.') + ': ' + x.msg).join('; ') : d; } catch (e) {}
+      throw new Error('HTTP ' + r.status + (msg ? ' · ' + msg : ''));
+    }));
+  }
+
+  loadRun() { return this.api('/api/run').then(r => r.json()).then(run => { this.setState({ run }); return run; }).catch(() => null); }
+
+  loadSun(dates) {
+    this.api('/api/sun?days=' + dates.length + '&start=' + dates[0]).then(r => r.json())
+      .then(j => { const sun = {}; j.days.forEach(x => { if (x.sunrise_h != null) sun[x.date] = { sr: x.sunrise_h, ss: x.sunset_h }; }); this.setState({ sun }); })
+      .catch(() => {});
+  }
+
+  // Archive for the year plus the previous year (expectation for open months = same month last year)
+  loadArchive(yr) {
+    if (!this.state.api) return;
+    [yr, yr - 1].forEach(y => {
+      if (this.state.archive[y]) return;
+      this.setState(s => ({ archive: { ...s.archive, [y]: { loading: true } } }));
+      this.api('/api/archive?year=' + y).then(r => r.json())
+        .then(j => this.setState(s => ({ archive: { ...s.archive, [y]: j } })))
+        .catch(e => this.setState(s => ({ archive: { ...s.archive, [y]: { error: e.message } } })));
+    });
+  }
+
+  pollRun(timeoutMs = 10 * 60 * 1000) {
+    const until = Date.now() + timeoutMs;
+    return new Promise((resolve, reject) => {
+      const tick = () => this.loadRun().then(run => {
+        if (!run) reject(new Error('/api/run nicht erreichbar'));
+        else if (run.status === 'running' && Date.now() > until) reject(new Error('Zeitüberschreitung: Lauf läuft noch'));
+        else if (run.status === 'ok') resolve(run);
+        else if (run.status === 'error') reject(new Error(run.error || 'Lauf fehlgeschlagen'));
+        else setTimeout(tick, 1000);
+      });
+      tick();
+    });
+  }
+
+  saveAndRun() {
+    const S = this.state, cur = S.draft || S.meta[S.editId], meta = { ...S.meta, [S.editId]: cur };
+    Object.keys(meta).forEach(k => { meta[k] = { ...meta[k], ...Object.fromEntries(SITE_KEYS.map(x => [x, cur[x]])) }; });
+    if (!S.api) { this.setState({ meta, draft: null, saved: 'Gespeichert (nur lokal – keine API)' }); return; }
+    this.setState({ meta, draft: null, saved: 'Speichern …' });
+    const body = JSON.stringify(this.toJson(this.editIds(meta), meta, null));
+    // A run already in progress (409) uses the old config: wait for it, then start one with the saved config.
+    const start = () => fetch('/api/run', { method: 'POST' }).then(r => {
+      if (r.status === 409) return this.pollRun().catch(() => {}).then(start);
+      if (!r.ok) throw new Error('Lauf konnte nicht gestartet werden (HTTP ' + r.status + ')');
+      return this.pollRun();
+    });
+    this.api('/api/systems', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body })
+      .then(() => { this.setState({ saved: 'Gespeichert · Neuberechnung läuft …' }); return start(); })
+      .then(() => this.api('/api/forecast').then(r => r.text()))
+      .then(t => {
+        const d = this.loadCsv(t, 'forecast.csv');
+        this.setState({ saved: 'Neu berechnet', archive: {} });
+        this.loadSun(d.dates);
+      })
+      .catch(e => this.setState({ saved: 'Fehler: ' + e.message }));
+  }
+
+  loadCsv(t, fname) {
+    const data = parseCsv(t);
+    if (!data.ids.length || !data.dates.length) throw new Error('Keine Spalten *_P_ac_W / *_E_kWh gefunden');
+    const meta = { ...(this.state.meta || {}) };  // inactive systems have no CSV columns but stay editable
+    data.ids.forEach((id, i) => { meta[id] = meta[id] || { ...DEF, name: 'PV-Anlage ' + (i + 1), ...(SEED[id] || {}) }; });
+    this.setState(s => ({ data, raw: t, fname, meta, editId: meta[s.editId] ? s.editId : data.ids[0], sel: s.sel === 'all' || data.ids.includes(s.sel) ? s.sel : 'all', draft: null, selDay: 0, hover: null }));
+    return data;
+  }
+
+  readFile(e, fn) {
+    const file = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    file.text().then(t => { try { this.setState({ ioMsg: fn(t, file.name) }); } catch (err) { this.setState({ ioMsg: 'Fehler: ' + err.message }); } });
+  }
+
+  toJson(ids, meta = this.state.meta, draft = this.state.draft) {
+    const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? v : n; };
+    const get = id => (id === this.state.editId && draft) || meta[id];
+    const s0 = get(ids[0]);
+    const horizon = t => { const o = {}; String(t || '').split(',').forEach(p => { const [a, b] = p.split(':').map(x => parseFloat(x)); if (!isNaN(a) && !isNaN(b)) o[a] = b; }); return Object.keys(o).length ? o : null; };
+    return {
+      site: { latitude: num(s0.lat), longitude: num(s0.lon), altitude: num(s0.alt), timezone: s0.tz, surface_tilt: num(s0.tilt) },
+      systems: ids.map(id => { const m = get(id); return {
+        name: id, label: m.name, active: m.active !== false, kWp: num(m.kWp), surface_azimuth: num(m.az), p_inv_ac_kW: num(m.p_inv_ac_kW),
+        faiman_u0: num(m.faiman_u0), faiman_u1: num(m.faiman_u1), wind_height_factor: num(m.wind_height_factor), gamma_pdc: num(m.gamma_pdc),
+        dc_cable_loss: pnum(m.dc_cable_loss) / 100, system_loss: pnum(m.system_loss) / 100, eta_inv_nom: pnum(m.eta_inv_nom) / 100, dc_ac_ratio: num(m.dc_ac_ratio),
+        horizon_profile: horizon(m.horizon) }; })
+    };
+  }
+
+  fromJson(t) {
+    const j = JSON.parse(t), meta = { ...this.state.meta }, site = j.site || {}, list = Array.isArray(j.systems) ? j.systems : [];
+    if (!list.length) throw new Error('Keine "systems" im JSON gefunden');
+    const s = v => v == null ? undefined : String(v), pc = v => v == null ? undefined : String(+(v * 100).toFixed(3));
+    list.forEach(p => {
+      const id = p.name; if (!id) return;
+      const m = { ...DEF, ...(meta[id] || {}) }, set = (k, v) => { if (v !== undefined) m[k] = v; };
+      set('lat', s(site.latitude)); set('lon', s(site.longitude)); set('alt', s(site.altitude)); set('tz', site.timezone); set('tilt', s(site.surface_tilt));
+      set('name', p.label || p.name); if (p.active !== undefined) m.active = p.active !== false; set('kWp', s(p.kWp)); set('az', s(p.surface_azimuth)); set('p_inv_ac_kW', s(p.p_inv_ac_kW));
+      set('faiman_u0', s(p.faiman_u0)); set('faiman_u1', s(p.faiman_u1)); set('wind_height_factor', s(p.wind_height_factor)); set('gamma_pdc', s(p.gamma_pdc));
+      set('dc_cable_loss', pc(p.dc_cable_loss)); set('system_loss', pc(p.system_loss)); set('eta_inv_nom', pc(p.eta_inv_nom)); set('dc_ac_ratio', s(p.dc_ac_ratio));
+      if (p.horizon_profile !== undefined) m.horizon = p.horizon_profile ? Object.entries(p.horizon_profile).map(([a, b]) => a + ':' + b).join(', ') : '';
+      meta[id] = m;
+    });
+    this.setState({ meta, draft: null });
+    return list.length + ' Anlage(n) aus JSON übernommen';
+  }
+
+  download(name, text, type) {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.setState({ ioMsg: name + ' heruntergeladen' });
+  }
+
+  exportHourly() {
+    const d = this.state.data, ids = this.ids(), lines = ['time,' + ids.map(id => id + '_P_ac_W,' + id + '_E_kWh').join(',') + ',P_total_ac_W,E_total_kWh'];
+    d.dates.forEach(date => Object.keys(d.byDate[date]).map(Number).sort((a, b) => a - b).forEach(h => {
+      const r = d.byDate[date][h];
+      const P = ids.reduce((a, id) => a + r.P[id], 0), E = ids.reduce((a, id) => a + r.E[id], 0);
+      lines.push(r.ts + ',' + ids.map(id => r.P[id].toFixed(1) + ',' + r.E[id].toFixed(4)).join(',') + ',' + P.toFixed(1) + ',' + E.toFixed(4));
+    }));
+    this.download('pv_prognose_stuendlich.csv', lines.join('\n'), 'text/csv');
+  }
+
+  exportDaily() {
+    const d = this.state.data, ids = this.ids(), lines = ['date,' + ids.map(id => id + '_E_kWh').join(',') + ',E_total_kWh,P_peak_kW'];
+    d.dates.forEach(date => {
+      const rows = Object.values(d.byDate[date]);
+      const per = ids.map(id => rows.reduce((a, r) => a + r.E[id], 0));
+      const peak = Math.max(...rows.map(r => ids.reduce((a, id) => a + r.P[id], 0))) / 1000;
+      lines.push(date + ',' + per.map(v => v.toFixed(3)).join(',') + ',' + per.reduce((a, b) => a + b, 0).toFixed(3) + ',' + peak.toFixed(2));
+    });
+    this.download('pv_prognose_tageswerte.csv', lines.join('\n'), 'text/csv');
+  }
+
+  exportMonthly() {
+    const Y = this.yearModel(), lines = ['month,archive_kWh,forecast_kWh,expected_kWh'];
+    Y.bars.forEach((b, i) => lines.push(this.state.year + '-' + String(i + 1).padStart(2, '0') + ',' + b.a.toFixed(1) + ',' + b.f.toFixed(1) + ',' + b.e.toFixed(1)));
+    this.download('pv_monatswerte_' + this.state.year + '.csv', lines.join('\n'), 'text/csv');
+  }
+
+  // Systems in the editor: those with forecast columns plus configured inactive ones (unused kWp-0 slots hidden)
+  editIds(meta = this.state.meta) {
+    const d = this.state.data;
+    return Object.keys(meta).filter(id => d.ids.includes(id) || pnum(meta[id].kWp) > 0);
+  }
+  tz() { const d = this.state.data, m = d && this.state.meta && this.state.meta[d.ids[0]]; return (m && m.tz) || 'Europe/Berlin'; }
+  // Index of today's date in the forecast; the first day if today is missing (sample data, stale file)
+  todayIdx() { const i = this.state.data.dates.indexOf(siteNow(this.tz()).date); return i < 0 ? 0 : i; }
+  ids() { const d = this.state.data; return this.state.sel === 'all' ? d.ids : [this.state.sel]; }
+  name(id) { return (this.state.meta[id] || {}).name || id; }
+  kwp(ids) { return ids.reduce((a, id) => a + (parseFloat(this.state.meta[id].kWp) || 0), 0); }
+  // Combined inverter AC limit (kW) of the selection: fixed Y scale so days are comparable
+  invCap(ids) {
+    return ids.reduce((a, id) => { const m = this.state.meta[id] || {};
+      return a + (pnum(m.p_inv_ac_kW) || pnum(m.kWp) / (pnum(m.dc_ac_ratio) || 1)); }, 0);
+  }
+  powerScale(ids, dataMax) {
+    const cap = this.invCap(ids), max = Math.max(cap, dataMax) || 1;
+    const step = [1, 2, 2.5, 5, 10].map(f => f * Math.pow(10, Math.floor(Math.log10(max / 4)))).find(st => st >= max / 4);
+    const vals = [];
+    for (let v = 0; v < max - 0.4 * step; v += step) vals.push(v);
+    vals.push(max);
+    return { max, vals, capLabel: cap >= dataMax ? 'WR ' : '' };
+  }
+
+  weather(di, h) {
+    const d = this.state.data, date = d.dates[di], r = d.byDate[date][h], ids = d.ids;
+    if (d.hasWx) {
+      const s = this.sun(di), mid = h - 0.5;
+      return { temp: r && r.T != null ? r.T : 0, cloud: r && r.C != null ? Math.round(r.C) : null, day: mid > s.sr && mid < s.ss };
+    }
+    const tot = r ? ids.reduce((a, id) => a + r.E[id], 0) : 0, mx = d.maxE[h] || 0;
+    const [tmin, tmax] = this.tempRange(di);
+    const temp = tmin + (tmax - tmin) * Math.max(0, Math.sin(Math.PI * (h - 6) / 18));
+    const day = mx > 0.05;
+    const cloud = day ? Math.round(10 + 80 * (1 - tot / mx)) : null;
+    return { temp, cloud, day };
+  }
+
+  sun(di) {
+    const real = this.state.sun[this.state.data.dates[di]];
+    if (real) return real;
+    const sr = 7.28 + di * 0.03, ss = 19.23 - di * 0.03; return { sr, ss };  // approximation until /api/sun answers
+  }
+
+  tempRange(di) {
+    const d = this.state.data, ts = Object.values(d.byDate[d.dates[di]]).map(r => r.T).filter(t => t != null);
+    return d.hasWx && ts.length ? [Math.round(Math.min(...ts)), Math.round(Math.max(...ts))] : TEMPS[di % TEMPS.length];
+  }
+
+  dayModel(di, nowH, isToday) {
+    const d = this.state.data, date = d.dates[di], rows = d.byDate[date], ids = this.ids();
+    const e = h => { const r = rows[h]; return r ? ids.reduce((a, id) => a + r.E[id], 0) : 0; };
+    const dayF = Object.keys(rows).reduce((a, h) => a + e(+h), 0);
+    let peakP = 0, peakH = 12;
+    Object.keys(rows).forEach(h => { const p = ids.reduce((a, id) => a + rows[h].P[id], 0) / 1000; if (p > peakP) { peakP = p; peakH = +h; } });
+    const scale = this.powerScale(ids, Math.max(...HRS.map(e))), max = scale.max;
+    const useNow = isToday && nowH != null;
+    const hoverH = this.state.hover ?? (useNow && nowH > 6 && nowH < 20 ? Math.ceil(nowH) : peakH);
+    const bars = HRS.map((h, i) => {
+      const v = e(h), bh = v / max * 210, sx = 48 + i * 84;
+      const past = useNow && h <= nowH, cur = useNow && h - 1 < nowH && nowH < h;
+      const frac = cur ? nowH - (h - 1) : 0;
+      return { sx, sw: 84, x: sx + 14, w: 56, h: bh, y: 230 - bh, past, future: !past, cur, ch: bh * frac, cy: 230 - bh * frac,
+        lx: sx + 42, lp: ((sx + 42) / 13.2) + '%', label: String(h).padStart(2, '0') + ':00', hl: hoverH === h, onHover: () => this.setState({ hover: h }) };
+    });
+    const yTicks = scale.vals.map((v, k) => { const y = 230 - v / max * 210, top = k === scale.vals.length - 1;
+      return { y, tp: (y / 2.56) + '%', label: (top ? scale.capLabel : '') + v.toLocaleString('de-DE', { maximumFractionDigits: 1 }) }; });
+    const strip = HRS.map(h => { const w = this.weather(di, h); return { icon: icon(w.cloud, w.day || (h > 7 && h < 20)), temp: Math.round(w.temp) + '°', cloud: w.cloud == null ? '–' : w.cloud + ' %' }; });
+    const hw = this.weather(di, hoverH);
+    const ro = { time: (hoverH - 1) + '–' + hoverH + ' Uhr', kw: nf(e(hoverH), 1), kwh: nf(e(hoverH), 2), cloud: hw.cloud == null ? 'Nacht' : hw.cloud + ' % Wolken', temp: Math.round(hw.temp) + ' °C' };
+    const s = this.sun(di);
+    const dt = new Date(date + 'T12:00:00');
+    return { date, dt, dayF, e, bars, yTicks, strip, ro, peakP, peakH, s,
+      dateLong: WDL[dt.getDay()] + ', ' + dt.getDate() + '. ' + MONL[dt.getMonth()] + ' ' + dt.getFullYear(),
+      dayFs: kwhF(dayF), peakKw: nf(peakP, 1), peakTime: 'um ' + (peakH - 1) + '–' + peakH + ' Uhr' };
+  }
+
+  todayModel(nowH, ti) {
+    const m = this.dayModel(ti, nowH, true), ids = this.ids();
+    let harv = 0; for (let h = 0; h <= 23; h++) { const v = m.e(h); if (h <= nowH) harv += v; else if (h - 1 < nowH) harv += v * (nowH - (h - 1)); }
+    const curH = Math.ceil(nowH), rows = this.state.data.byDate[m.date];
+    const nowKw = rows[curH] ? ids.reduce((a, id) => a + rows[curH].P[id], 0) / 1000 : 0;
+    const hoursLeft = HRS.filter(h => h - 1 >= nowH && m.e(h) > 0.05).length;
+    const nowX = 48 + (nowH - 5) * 84, w = this.weather(ti, Math.min(23, Math.max(0, curH)));
+    const dayl = m.s.ss - m.s.sr;
+    return { dateLong: m.dateLong, dayF: m.dayFs, harv: kwhF(harv), pct: m.dayF ? Math.round(harv / m.dayF * 100) + ' %' : '–',
+      harvW: m.dayF ? Math.min(1000, harv / m.dayF * 1000) : 0, remain: kwhF(Math.max(0, m.dayF - harv)), nowKw: nf(nowKw, 1), hoursLeft: hoursLeft + ' h',
+      peakKw: m.peakKw, peakTime: m.peakTime, bars: m.bars, yTicks: m.yTicks, strip: m.strip, ro: m.ro,
+      showNow: nowH > 5 && nowH < 20, nowX, nowLp: ((nowX > 1200 ? nowX - 84 : nowX + 6) / 13.2) + '%',
+      perSys: this.state.data.ids.map(id => ({ name: this.name(id), kwh: kwhF(Object.keys(rows).reduce((a, h) => a + rows[h].E[id], 0)) })),
+      nowWx: { icon: icon(w.cloud, nowH > m.s.sr && nowH < m.s.ss), temp: Math.round(w.temp) + ' °C', cloud: w.cloud == null ? '–' : w.cloud + ' %' },
+      sr: hm(m.s.sr), ss: hm(m.s.ss), dayLen: Math.floor(dayl) + ' h ' + Math.round((dayl % 1) * 60) + ' min' };
+  }
+
+  yearModel() {
+    const d = this.state.data, ids = this.ids(), kwp = this.kwp(ids), yr = this.state.year;
+    const now = new Date(), curY = now.getFullYear();
+    const A = this.state.archive[yr], prev = this.state.archive[yr - 1];
+    const real = !!(A && A.months), until = real ? A.until : null;
+    const mSum = (arc, i) => { const m = arc && arc.months && arc.months.find(x => x.month === i + 1); return m ? ids.reduce((a, id) => a + (m[id + '_E_kWh'] || 0), 0) : null; };
+    const fc = Array(12).fill(0);  // forecast days not yet covered by the archive
+    d.dates.forEach(date => { if (+date.slice(0, 4) !== yr || (until && date <= until)) return; const mi = +date.slice(5, 7) - 1; Object.values(d.byDate[date]).forEach(r => ids.forEach(id => fc[mi] += r.E[id])); });
+    const curM = yr === curY ? now.getMonth() : 12;
+    const monthDays = new Date(curY, now.getMonth() + 1, 0).getDate(), doneFrac = (now.getDate() - 1) / monthDays;
+    const ms = MON.map((m, i) => {
+      const base = SY[i] * kwp, exp = mSum(prev, i) ?? base;
+      const arc = real ? (mSum(A, i) || 0) : (i < curM ? base * ((FAC[yr] || [])[i] || 1) : i === curM ? base * doneFrac : 0);
+      if (i < curM) return { m, a: arc, f: 0, e: 0 };
+      if (i === curM) return { m, a: arc, f: fc[i], e: exp, running: true };
+      return { m, a: 0, f: fc[i], e: exp };
+    });
+    const max = nice(Math.max(...ms.map(x => Math.max(x.a + x.f, x.e))) * 1.1);
+    const sc = v => v / max * 216;
+    const bars = ms.map((x, i) => {
+      const sx = 64 + i * 103.67, ah = sc(x.a), fh = sc(x.f), eh = sc(x.e), top = Math.max(ah + fh, eh);
+      const past = x.e === 0;
+      return { ...x, x: sx + 22, w: 60, lx: sx + 52, hasA: x.a > 0, ah, ay: 240 - ah, hasF: x.f > 0, fh, fy: 240 - ah - fh, hasE: x.e > 0, eh, ey: 240 - eh,
+        lp: ((sx + 52) / 13.2) + '%', vp: ((240 - top - 5) / 2.5) + '%', val: past || x.running ? nf(x.a + x.f, 0) : '≈ ' + nf(x.e, 0) };
+    });
+    const yTicks = [0, 1, 2, 3, 4].map(k => { const v = max * k / 4, y = 240 - k * 54; return { y, tp: (y / 2.5) + '%', label: nf(v, 0) }; });
+    const sumA = ms.reduce((a, x) => a + x.a, 0), sumF = ms.reduce((a, x) => a + x.f, 0);
+    const best = ms.reduce((b, x) => (x.a + x.f > b.a + b.f ? x : b), ms[0]);
+    const dm = iso => { const [, mo, da] = iso.split('-'); return +da + '.' + (+mo) + '.'; };
+    const archDays = until ? Math.round((new Date(until) - new Date(yr + '-01-01')) / 864e5) + 1 : 365;
+    const kpis = yr < curY ? [
+      { k: 'Jahresertrag', v: nf(sumA / 1000, 2), u: 'MWh', sub: 'Archiv-Berechnung, 12 Monate' },
+      { k: 'Spezifischer Ertrag', v: nf(sumA / kwp, 0), u: 'kWh/kWp', sub: nf(kwp, 1) + ' kWp installiert' },
+      { k: 'Stärkster Monat', v: MONL[MON.indexOf(best.m)], u: '', sub: nf(best.a, 0) + ' kWh' },
+      { k: 'Tagesmittel', v: nf(sumA / archDays, 1), u: 'kWh', sub: 'über das Jahr' }
+    ] : [
+      { k: 'Ertrag bis heute', v: nf(sumA / 1000, 2), u: 'MWh', sub: 'Archiv 1.1. – ' + (until ? dm(until) : 'gestern') },
+      { k: 'Prognose ' + d.dates.length + ' Tage', v: nf(sumF, 0), u: 'kWh', sub: this.state.api ? 'aus /api/forecast' : 'aus forecast.csv' },
+      { k: 'Hochrechnung Jahresende', v: nf((sumA + sumF + ms.reduce((a, x, i) => a + (i > curM ? Math.max(0, x.e - x.f) : 0), 0) + Math.max(0, ms[curM].e * (1 - doneFrac) - fc[curM])) / 1000, 2), u: 'MWh', sub: 'Archiv + Prognose + Erwartung' },
+      { k: 'Spezifischer Ertrag', v: nf(sumA / kwp, 0), u: 'kWh/kWp', sub: 'bisher · ' + nf(kwp, 1) + ' kWp' }
+    ];
+    const note = real ? 'Archiv aus Open-Meteo-Wetter bis ' + dm(until) + ' · Erwartung offener Monate = Vorjahresmonat' + (prev && prev.months ? '' : ' (Platzhalter)')
+      : A && A.loading ? 'Archiv wird berechnet …'
+      : A && A.error ? 'Archiv nicht verfügbar (' + A.error + ') · Platzhalterwerte'
+      : 'Platzhalterwerte · Archiv nur mit laufender API';
+    return { bars, yTicks, kpis, note };
+  }
+
+  renderVals() {
+    const S = this.state, st = this.props.startScreen || 'Heute';
+    const screen = S.screen || ({ 'Heute': 'heute', '7 Tage': 'woche', 'Jahr': 'jahr', 'Parameter': 'param' }[st] || 'heute');
+    const tabs = [['heute','Heute'],['woche','7 Tage'],['jahr','Jahr'],['param','Parameter']].map(([k, l]) => ({ label: l, current: screen === k ? 'page' : undefined,
+      line: screen === k ? 'var(--color-accent)' : 'transparent', go: e => { e.preventDefault(); this.setState({ screen: k, hover: null }); if (k === 'jahr') this.loadArchive(this.state.year); } }));
+    const base = { tabs, runStamp: S.fname && S.fname !== 'forecast.csv' ? S.fname
+      : S.run && (S.run.finished || S.run.forecast_updated) ? 'Prognose-Lauf ' + new Date(S.run.finished || S.run.forecast_updated).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+      : S.api ? 'Prognose-Lauf –' : 'Beispieldaten (uploads/forecast.csv)', sel: S.sel, onSel: e => this.setState({ sel: e.target.value, hover: null }),
+      clearHover: () => this.setState({ hover: null }), isHeute: false, isWoche: false, isJahr: false, isParam: false, showJson: false,
+      csvRef: this.csvRef, jsonRef: this.jsonRef, stop: e => e.stopPropagation(),
+      showIo: !!S.showIo, ioMsg: S.ioMsg || false, openIo: () => this.setState({ showIo: true, ioMsg: null }), closeIo: () => this.setState({ showIo: false }),
+      onCsvFile: e => this.readFile(e, (t, n) => { const d = this.loadCsv(t, n); return n + ' geladen · ' + d.ids.length + ' Anlagen · ' + d.dates.length + ' Tage'; }),
+      onJsonFile: e => this.readFile(e, t => this.fromJson(t)),
+      importOpts: [
+        { l: 'Prognose-CSV', d: 'Pipeline-Output (time, *_P_ac_W, *_E_kWh) — ersetzt die angezeigten Daten', on: () => this.csvRef.current && this.csvRef.current.click() },
+        { l: 'Parameter-JSON', d: 'Anlagen-Parameter für pv_forecast.py übernehmen', on: () => this.jsonRef.current && this.jsonRef.current.click() }
+      ],
+      exportOpts: S.data ? [
+        { l: 'Stundenwerte (CSV)', d: 'Leistung & Energie je Stunde, aktive Auswahl', on: () => this.exportHourly() },
+        { l: 'Tageswerte (CSV)', d: 'kWh je Tag und Anlage, Spitzenleistung', on: () => this.exportDaily() },
+        { l: 'Monatswerte ' + S.year + ' (CSV)', d: 'Archiv, Prognose, Erwartung je Monat', on: () => this.exportMonthly() },
+        { l: 'Parameter (JSON)', d: 'Alle Anlagen, Format wie „Als JSON anzeigen“', on: () => this.download('pv_parameter.json', JSON.stringify(this.toJson(this.editIds()), null, 2), 'application/json') }
+      ] : [] };
+    if (!S.data) return { ...base, msg: S.err || 'forecast.csv wird geladen …', sysOptions: [{ v: 'all', l: 'Alle Anlagen' }] };
+    const d = S.data;
+    const sim = (this.props.zeit ?? 'Echtzeit') === 'Simuliert';
+    const nowH = sim ? (this.props.simHour ?? 13.5) : siteNow(this.tz()).h, ti = this.todayIdx();
+    const ids = this.ids();
+    const sysLabel = S.sel === 'all' ? 'Alle Anlagen · ' + d.ids.map(id => this.name(id)).join(' + ') + ' · ' + nf(this.kwp(ids), 1) + ' kWp' : this.name(S.sel) + ' · ' + nf(this.kwp(ids), 1) + ' kWp';
+    const out = { ...base, msg: false, sysLabel, wxDerived: !d.hasWx, nowLabel: hm(nowH), nowNote: (sim ? 'Simulierte Uhrzeit ' : 'Stand ') + hm(nowH) + ' · Quelle ' + (S.api && S.fname === 'forecast.csv' ? '/api/forecast' : S.fname) + ' · ' + d.rows + ' Stundenwerte',
+      sysOptions: [{ v: 'all', l: 'Alle Anlagen' }, ...d.ids.map(id => ({ v: id, l: this.name(id) }))],
+      isHeute: screen === 'heute', isWoche: screen === 'woche', isJahr: screen === 'jahr', isParam: screen === 'param' };
+
+    if (screen === 'heute') out.T = this.todayModel(nowH, ti);
+
+    if (screen === 'woche') {
+      const models = d.dates.map((_, i) => this.dayModel(i, null, false));
+      const wmax = this.powerScale(ids, Math.max(...models.map(m => Math.max(...HRS.map(m.e))))).max;
+      out.weekCards = models.map((m, i) => {
+        const pts = HRS.map((h, j) => [j * 10, 40 - m.e(h) / wmax * 36]);
+        const line = 'M' + pts.map(p => p[0] + ' ' + p[1].toFixed(1)).join(' L');
+        const ws = HRS.map(h => this.weather(i, h)).filter(w => w.cloud != null);
+        const cl = Math.round(ws.reduce((a, w) => a + w.cloud, 0) / (ws.length || 1));
+        const [tmin, tmax] = this.tempRange(i);
+        return { wd: WD[m.dt.getDay()], date: m.dt.getDate() + '.' + (m.dt.getMonth() + 1) + '.', isToday: i === ti, icon: icon(cl, true), temps: tmax + '° / ' + tmin + '°', cloud: cl + ' %',
+          line, area: line + ' L140 40 L0 40 Z', kwh: kwhF(m.dayF), peak: m.peakKw, srss: hm(m.s.sr) + '–' + hm(m.s.ss),
+          ring: S.selDay === i ? '2px solid var(--color-accent)' : 'none', onClick: () => this.setState({ selDay: i, hover: null }) };
+      });
+      const sd = Math.min(S.selDay, d.dates.length - 1), m = models[sd];
+      out.D = { dateLong: m.dateLong, dayF: m.dayFs, peakKw: m.peakKw, peakTime: m.peakTime, bars: m.bars, yTicks: m.yTicks, strip: m.strip, ro: m.ro };
+      out.weekTitle = d.dates.length + '-Tage-Prognose · ' + models[0].dt.getDate() + '.' + (models[0].dt.getMonth() + 1) + '. – ' + models[models.length - 1].dt.getDate() + '.' + (models[models.length - 1].dt.getMonth() + 1) + '.';
+      out.weekSum = kwhF(models.reduce((a, m) => a + m.dayF, 0));
+    }
+
+    if (screen === 'jahr') {
+      out.year = S.year; out.Y = this.yearModel();
+      const cy = new Date().getFullYear();
+      out.yearOpts = [cy - 1, cy].map(y => ({ l: String(y), checked: S.year === y, on: () => { this.setState({ year: y }); this.loadArchive(y); } }));
+    }
+
+    if (screen === 'param') {
+      const id = S.editId, dr = S.draft || S.meta[id];
+      const mk = ([k, label, py]) => ({ k, label, py, v: dr[k] ?? '', span: 1 });
+      const eids = this.editIds();
+      out.editId = id; out.draftName = dr.name; out.sysCount = eids.length;
+      out.draftActive = dr.active !== false;
+      out.onActive = e => { const active = e.target.checked; this.setState(s => ({ draft: { ...(s.draft || s.meta[s.editId]), active }, saved: false })); }; out.dirty = !!S.draft; out.saved = S.saved;
+      out.editList = eids.map(i => { const m = S.meta[i]; return { id: i, name: m.name, meta: nf(parseFloat(m.kWp), 1) + ' kWp · Azimut ' + m.az + '° · WR ' + m.p_inv_ac_kW + ' kW' + (m.active === false ? ' · inaktiv' : ''), ring: i === id ? '2px solid var(--color-accent)' : 'none',
+        onClick: () => this.setState({ editId: i, draft: null, saved: false }) }; });
+      out.mainGroups = [{ title: 'Bezeichnung', fields: [{ ...mk(['name', 'Name der Anlage', 'name']), span: 2 }] }, ...MAIN.map(g => ({ title: g.title, fields: g.fields.map(mk) }))];
+      out.advGroups = ADV.map(g => ({ title: g.title, note: g.note, fields: g.fields.map(x => ({ ...mk(x), span: x[0] === 'horizon' ? 4 : 1 })) }));
+      out.totalLoss = nf(totalLoss(dr), 1);
+      out.adv = S.adv; out.advRot = S.adv ? 90 : 0; out.toggleAdv = () => this.setState(s => ({ adv: !s.adv }));
+      out.onField = e => { const { name, value } = e.target; this.setState(s => ({ draft: { ...(s.draft || s.meta[s.editId]), [name]: value }, saved: false })); };
+      out.save = () => this.saveAndRun();
+      out.discard = () => this.setState({ draft: null, saved: false });
+      out.openJson = () => this.setState({ showJson: true, copied: false });
+      out.jsonText = JSON.stringify(this.toJson([id]), null, 2);
+      out.showJson = S.showJson; out.closeJson = () => this.setState({ showJson: false });
+      out.copyLabel = S.copied ? 'Kopiert' : 'Kopieren';
+      out.copyJson = () => { try { navigator.clipboard.writeText(out.jsonText); } catch (e) {} this.setState({ copied: true }); };
+    }
+    return out;
+  }
+}
+</script>
+</body>
+</html>

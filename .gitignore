@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+
+# Open-Meteo request cache (requests_cache)
+.cache/
+.cache.sqlite
+
+# Local dashboard overrides and generated files; data/config.json (defaults) stays versioned
+data/myconfig.json
+data/*.csv
+data/*.hash
+data/*.bak
+data/*.tmp
+
+# Design handoff download (copied to frontend/ and docs/design_handoff/)
+*.zip
+PV forecasting tool UI/
