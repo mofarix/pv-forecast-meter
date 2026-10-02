@@ -10,13 +10,16 @@ It fetches hourly weather forecasts, simulates each configured PV system and rep
 
 ```bash
 python -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
 ## Dashboard
 
 ```bash
-.venv/bin/uvicorn server.app:app --reload               # add --port 8001 if 8000 is taken
+.venv/bin/uvicorn server.app:app --reload
+
+# Unter Windows             
+.\.venv\Scripts\python.exe -m uvicorn server.app:app --reload --port 8001 # add --port 8001 if 8000 is taken
 ```
 
 Open http://localhost:8000/. On first load the server computes a fresh forecast from Open-Meteo. After that it recomputes whenever the stored forecast is older than 3 hours.
