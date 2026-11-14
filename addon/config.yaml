@@ -1,5 +1,5 @@
 name: PV-Prognose
-version: "0.1.0"
+version: "0.1.1"
 slug: pv_forecast
 description: PV-Leistungsprognose (pvlib + Open-Meteo) als Sensoren und Dashboard
 url: https://github.com/mofarix/pv-forecast-meter

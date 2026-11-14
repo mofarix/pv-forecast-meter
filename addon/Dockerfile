@@ -6,12 +6,13 @@ FROM ${BUILD_FROM}
 ARG PV_FORECAST_REPO=https://github.com/mofarix/pv-forecast-meter.git
 ARG PV_FORECAST_REF=main
 
+COPY constraints.txt /tmp/constraints.txt
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-venv git ca-certificates \
     && git clone --depth 1 --branch "${PV_FORECAST_REF}" "${PV_FORECAST_REPO}" /app \
     && rm -rf /app/.git /app/docs /app/tests \
     && python3 -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir -r /app/requirements.txt \
+    && /opt/venv/bin/pip install --no-cache-dir -c /tmp/constraints.txt -r /app/requirements.txt \
     && apt-get purge -y --auto-remove git \
     && rm -rf /var/lib/apt/lists/*
 

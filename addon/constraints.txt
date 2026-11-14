@@ -1,0 +1,3 @@
+# Pins only for the add-on image (pip -c). NumPy >= 2.3 wheels require x86-64-v2 (SSE4.2/POPCNT),
+# which older CPUs and VMs with a generic CPU type (Proxmox kvm64) do not have.
+numpy<2.3
