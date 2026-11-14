@@ -459,7 +459,7 @@ const MAIN = [
 ];
 const ADV = [
   { title: 'Temperaturmodell · Faiman', note: 'T_Zelle = T_Luft + E_POA / (u0 + u1 · v_Wind · Faktor)', fields: [['faiman_u0','U0 (W/m²K)','FAIMAN_U0'],['faiman_u1','U1 (W·s/m³K)','FAIMAN_U1'],['wind_height_factor','Windhöhen-Faktor','WIND_HEIGHT_FACTOR'],['gamma_pdc','Temperaturkoeff. (1/K)','gamma_pdc']] },
-  { title: 'Verluste & Wirkungsgrad', note: 'PVWatts DC → Wechselrichter → Systemverlust', fields: [['dc_cable_loss','DC-Kabelverlust (%)','DC_CABLE_LOSS'],['system_loss','Systemverlust (%)','SYSTEM_LOSS'],['eta_inv_nom','η Wechselrichter (%)','ETA_INVERTER'],['dc_ac_ratio','DC/AC-Verhältnis','dc_ac_ratio']] },
+  { title: 'Verluste & Wirkungsgrad', note: 'PVWatts DC → Kabel- & Systemverlust → Wechselrichter', fields: [['dc_cable_loss','DC-Kabelverlust (%)','DC_CABLE_LOSS'],['system_loss','Systemverlust (%)','SYSTEM_LOSS'],['eta_inv_nom','η Wechselrichter (%)','ETA_INVERTER'],['dc_ac_ratio','DC/AC-Verhältnis','dc_ac_ratio']] },
   { title: 'Horizontverschattung', note: 'Azimut:Winkel-Stützpunkte, z. B. 0:0, 200:0, 220:10, 270:15, 300:8, 360:0 — leer = keine', fields: [['horizon','Horizontprofil','horizon_profile']] }
 ];
 const nf = (n, d = 1) => (n || 0).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -505,8 +505,8 @@ class Component extends DCLogic {
   jsonRef = React.createRef();
 
   componentDidMount() {
-    const cfg = this.api('/api/systems').then(r => r.json()).catch(() => null);
-    this.api('/api/forecast').then(r => r.text()).then(t => ({ t, api: true }))
+    const cfg = this.api('api/systems').then(r => r.json()).catch(() => null);
+    this.api('api/forecast').then(r => r.text()).then(t => ({ t, api: true }))
       .catch(() => fetch('uploads/forecast.csv').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(t => ({ t, api: false })))
       .then(({ t, api }) => cfg.then(c => {
         const d = this.loadCsv(t, 'forecast.csv');
@@ -526,10 +526,10 @@ class Component extends DCLogic {
     }));
   }
 
-  loadRun() { return this.api('/api/run').then(r => r.json()).then(run => { this.setState({ run }); return run; }).catch(() => null); }
+  loadRun() { return this.api('api/run').then(r => r.json()).then(run => { this.setState({ run }); return run; }).catch(() => null); }
 
   loadSun(dates) {
-    this.api('/api/sun?days=' + dates.length + '&start=' + dates[0]).then(r => r.json())
+    this.api('api/sun?days=' + dates.length + '&start=' + dates[0]).then(r => r.json())
       .then(j => { const sun = {}; j.days.forEach(x => { if (x.sunrise_h != null) sun[x.date] = { sr: x.sunrise_h, ss: x.sunset_h }; }); this.setState({ sun }); })
       .catch(() => {});
   }
@@ -540,7 +540,7 @@ class Component extends DCLogic {
     [yr, yr - 1].forEach(y => {
       if (this.state.archive[y]) return;
       this.setState(s => ({ archive: { ...s.archive, [y]: { loading: true } } }));
-      this.api('/api/archive?year=' + y).then(r => r.json())
+      this.api('api/archive?year=' + y).then(r => r.json())
         .then(j => this.setState(s => ({ archive: { ...s.archive, [y]: j } })))
         .catch(e => this.setState(s => ({ archive: { ...s.archive, [y]: { error: e.message } } })));
     });
@@ -567,14 +567,14 @@ class Component extends DCLogic {
     this.setState({ meta, draft: null, saved: 'Speichern …' });
     const body = JSON.stringify(this.toJson(this.editIds(meta), meta, null));
     // A run already in progress (409) uses the old config: wait for it, then start one with the saved config.
-    const start = () => fetch('/api/run', { method: 'POST' }).then(r => {
+    const start = () => fetch('api/run', { method: 'POST' }).then(r => {
       if (r.status === 409) return this.pollRun().catch(() => {}).then(start);
       if (!r.ok) throw new Error('Lauf konnte nicht gestartet werden (HTTP ' + r.status + ')');
       return this.pollRun();
     });
-    this.api('/api/systems', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body })
+    this.api('api/systems', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body })
       .then(() => { this.setState({ saved: 'Gespeichert · Neuberechnung läuft …' }); return start(); })
-      .then(() => this.api('/api/forecast').then(r => r.text()))
+      .then(() => this.api('api/forecast').then(r => r.text()))
       .then(t => {
         const d = this.loadCsv(t, 'forecast.csv');
         this.setState({ saved: 'Neu berechnet', archive: {} });

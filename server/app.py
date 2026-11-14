@@ -38,6 +38,7 @@ DATA_DIR = Path(os.environ.get("PV_DATA_DIR", ROOT / "data"))
 FRONTEND = ROOT / "frontend"
 
 FORECAST_MAX_AGE_S = 3 * 3600  # GET /api/forecast recomputes older files (Open-Meteo updates hourly)
+FORECAST_DAYS = int(os.environ.get("PV_FORECAST_DAYS", 7))  # default horizon for runs (add-on option)
 
 # Keys of a system entry that define it rather than tune the model; they survive a reset.
 IDENTITY_KEYS = ("name", "label", "active", "kWp", "surface_azimuth", "p_inv_ac_kW")
@@ -84,17 +85,31 @@ def read_overrides() -> dict:
     return {"site": dict(raw.get("site") or {}), "systems": list(raw.get("systems") or [])}
 
 
+def _only_differences(overrides: dict, base: dict) -> dict:
+    """Drop values equal to the base layer, so later base changes (config.json, add-on options) still apply."""
+    base_systems = {s["name"]: s for s in base["systems"]}
+    site = {k: v for k, v in overrides["site"].items() if v != base["site"].get(k)}
+    systems = []
+    for system in overrides["systems"]:
+        ref = base_systems.get(system["name"])
+        kept = {k: v for k, v in system.items() if ref is None or k == "name" or v != ref.get(k)}
+        if ref is None or len(kept) > 1:
+            systems.append(kept)
+    return {"site": site, "systems": systems}
+
+
 def save_overrides(overrides: dict) -> dict:
     """Validate, write atomically and return the effective config. Writes nothing on error."""
     try:
-        parsed = ConfigOverrides.model_validate(overrides)
-        effective = merge_config(read_layer(base_config_path()), parsed.model_dump(mode="json"))
+        base_layer = read_layer(base_config_path())
+        parsed = ConfigOverrides.model_validate(overrides).model_dump(mode="json", exclude_none=True)
+        effective = merge_config(base_layer, parsed)
+        minimal = _only_differences(parsed, merge_config(base_layer))
     except ValidationError as exc:
         raise HTTPException(422, exc.errors(include_url=False, include_context=False)) from exc
     except ValueError as exc:
         raise HTTPException(422, [{"loc": str(exc).split(":")[0].split("."), "msg": str(exc)}]) from exc
-    text = json.dumps(parsed.model_dump(mode="json", exclude_none=True), indent=2, ensure_ascii=False)
-    _atomic_write(config_path(), text + "\n", backup=True)
+    _atomic_write(config_path(), json.dumps(minimal, indent=2, ensure_ascii=False) + "\n", backup=True)
     return effective
 
 
@@ -133,7 +148,7 @@ def forecast_stale() -> bool:
     return not hash_path.exists() or hash_path.read_text().strip() != current
 
 
-def run_forecast(days: int = 7, only_if_stale: bool = False) -> None:
+def run_forecast(days: int = FORECAST_DAYS, only_if_stale: bool = False) -> None:
     with _compute_lock:
         # Re-checked under the lock: concurrent stale requests compute once, the rest reuse the result.
         if only_if_stale and not forecast_stale():
@@ -220,7 +235,7 @@ def get_defaults():
 
 
 @app.post("/api/run")
-def post_run(background: BackgroundTasks, days: int = 7):
+def post_run(background: BackgroundTasks, days: int = FORECAST_DAYS):
     if not 1 <= days <= 16:
         raise HTTPException(400, "days muss zwischen 1 und 16 liegen")
     with _state_lock:
@@ -294,7 +309,8 @@ def get_sun(days: int = 8, start: date | None = None):
 
 @app.get("/", include_in_schema=False)
 def index():
-    return RedirectResponse("/PV%20Prognose.dc.html")
+    # Relative, so it also works behind the Home Assistant ingress prefix.
+    return RedirectResponse("PV%20Prognose.dc.html")
 
 
 # Frontend under /, mounted after the API routes so /api/* keeps priority.

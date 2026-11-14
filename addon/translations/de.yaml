@@ -1,0 +1,30 @@
+configuration:
+  site:
+    name: Standort
+    description: Breitengrad, Längengrad, Höhe (m), Zeitzone, Modulneigung. Leer = Standort aus Home Assistant.
+  systems:
+    name: PV-Anlagen
+    description: Je Anlage name (Spaltenpräfix), kWp, surface_azimuth (180 = Süd), p_inv_ac_kW; optional Modellparameter.
+  forecast_days:
+    name: Prognosetage
+    description: Open-Meteo-Horizont (1–16 Tage).
+  update_interval_min:
+    name: Rechenintervall (min)
+    description: Wie oft die Prognose neu berechnet wird. Open-Meteo aktualisiert stündlich.
+  publish_interval_min:
+    name: Sensorintervall (min)
+    description: Wie oft "Leistung jetzt", "Energie bisher" usw. aus der Prognose aktualisiert werden.
+  publish:
+    name: Sensoren veröffentlichen über
+    description: auto = MQTT wenn Mosquitto verfügbar, sonst REST-API. none = nur Dashboard/API.
+  mqtt_host:
+    name: MQTT-Host (optional)
+    description: Nur nötig, wenn nicht das Mosquitto-Add-on verwendet wird.
+  mqtt_port:
+    name: MQTT-Port (optional)
+  mqtt_user:
+    name: MQTT-Benutzer (optional)
+  mqtt_password:
+    name: MQTT-Passwort (optional)
+  log_level:
+    name: Log-Level

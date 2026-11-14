@@ -31,9 +31,25 @@ Open http://localhost:8000/. On first load the server computes a fresh forecast 
 | **Jahr** | monthly energy from the Open-Meteo archive, the running month plus forecast, and an expectation for the open months (same month of the previous year) |
 | **Parameter** | edit site, PV generator and model parameters per system; **Speichern & neu berechnen** saves them to `data/myconfig.json` and recomputes |
 
+**7 Tage**: day cards with weather and sparkline, hourly chart for the selected day
+
+![PV forecast dashboard, "7 Tage" view: seven day cards with kWh, peak, temperature and cloud cover, and the hourly power chart for the selected day](docs/images/dashboard_7tage.png)
+
+**Jahr**: monthly energy from the archive (solid), forecast (hatched) and expectation for open months (dashed)
+
+![PV forecast dashboard, "Jahr" view: KPIs for yield to date, 7-day forecast, year-end projection and specific yield, and monthly bars](docs/images/dashboard_jahr.png)
+
+**Parameter**: per-system editor with the advanced model parameters expanded
+
+![PV forecast dashboard, "Parameter" view: system list and editor for site, PV generator, Faiman, loss and horizon parameters](docs/images/dashboard_parameter.png)
+
 The power axis always runs up to the combined inverter AC limit of the selected systems, so days can be compared at a glance. Use the system selector at the top right to filter every screen. **Import / Export** loads or downloads CSV and parameter JSON.
 
 The dashboard contains no measured data. "Bereits erzeugt" (already produced) is the forecast integrated up to the current time.
+
+## Home Assistant
+
+The repository doubles as a Home Assistant add-on repository: add `https://github.com/mofarix/pv-forecast-meter` under *Add-on Store → Repositories* and install **PV-Prognose**. The add-on runs the same pipeline on a schedule, publishes per-system sensors (MQTT discovery, REST fallback) and shows the dashboard as a sidebar panel. See [addon/DOCS.md](addon/DOCS.md) for options and entities, and [docs/ha_addon_concept.md](docs/ha_addon_concept.md) for the design decisions.
 
 ## Command line
 
